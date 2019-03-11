@@ -1,0 +1,1 @@
+nohup node node/compiler.js >> cp.log 2>&1 &

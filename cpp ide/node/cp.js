@@ -49,9 +49,9 @@ runResult = {
 module.exports={
 //compile('abc.cpp');
 
-compile: function(fileName,res){
+compile: function(fileName,out_file,res){
   resetRunResult();
-  var ls = spawn('g++', [fileName,'-o',fileName+'.out']);// abc.cpp -o abc.out
+  var ls = spawn('g++', [fileName,'-o',out_file]);// abc.cpp -o abc.out
 
   ls.stdout.on('data', (data) => {
     console.log(`stdout: ${data}`);
@@ -68,7 +68,7 @@ compile: function(fileName,res){
     console.log(`code:${code}`);
     runResult.compileCode = code;
     if(code === 0){
-      onCompiled(fileName+'.out',res);
+      onCompiled(out_file,res);
     }
     else{//compile failure, directly return result and not run
 	res.json(runResult);

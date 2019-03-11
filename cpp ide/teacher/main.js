@@ -1,6 +1,6 @@
 var ws = null;
 
-var displaying = null;
+var displaying = null;//null means the teacher has not login, once login, will be changed ot Teacher_tab
 
 var teacher={
 				
@@ -34,6 +34,7 @@ $(document).ready(
 		function loginResult(data){
 
 			if(data.result){
+				displaying = "Teacher_tab";
 				changeToNoticeMsg("Hello "+ data.class.teacher_id);
 				var students = data.class.students;
 				for (var i = 0; i < students.length; i++) {
@@ -45,7 +46,6 @@ $(document).ready(
 					$("#Tabs").append(element);
 				}
 			}else{
-				console.log(data.result);
 				changeToErrorMsg("登录失败，请重试");
 				
 			}
@@ -70,11 +70,11 @@ $(document).ready(
 		//update the global display function var
 
 		display = function display(tab_id){
-			console.log('change tab',tab_id)
+			console.log('change tab',displaying, tab_id)
 			$(".nav-link.active").attr("class","nav-link");//deactivate the existing selection
 			$("#"+tab_id).attr("class","nav-link active");//activate the new selection
 
-			if(displaying == $("#teacher_id").val()){//previously displaying teacher tab, save the content
+			if(displaying == "Teacher_tab"){//previously displaying teacher tab, save the content
 				//save teacher content:
 				teacher.file = $("#file").val();
 				teacher.content = cppEditor.getValue();
@@ -82,15 +82,18 @@ $(document).ready(
 
 
 			if(tab_id == "Teacher_tab"){//jump to teacher tab
-				displaying = $("#teacher_id").val();
+				//$("#teacher_id").val();
 				updateContent(teacher);
+				//still need to send msg to ws server to notify changing of the tab
+				ws.send("!"+JSON.stringify({'student_id':null}));
 
 			}else{	
 					ws.send("!"+JSON.stringify({'student_id':tab_id}));
-					displaying = tab_id;
+				//	displaying = tab_id;
 
 
 			}
+			displaying = tab_id;
 
 		}
 
@@ -120,7 +123,7 @@ $(document).ready(
 			               //alert("您的浏览器支持 WebSocket!");
 			               
 			               // 打开一个 web socket
-			               var ws = new WebSocket("ws://qianlima.love:8890");
+			               var ws = new WebSocket("ws://localhost:8890");
 			                
 			               ws.onopen = function()
 			               {
@@ -307,9 +310,24 @@ $(document).ready(
 
 		});
 
+		//return the author's id
+		//if it's teacher, should return teacher's id not teacher tab
+		function getAuthor(){
+
+			var author = displaying;
+
+			if(displaying == 'Teacher_tab'){
+				author =  $("#teacher_id").val();
+			}
+			return author;
+
+
+
+		}
+
 		function getSrcJsonStr(){
 			var src ={
-				'author':$("#student_id").val(),
+				'author':getAuthor(),
 				'file':$("#file").val(),
 				'status':'sharing',
 				'content':cppEditor.getValue()
@@ -317,6 +335,9 @@ $(document).ready(
 			return JSON.stringify(src);
 
 		}
+
+		
+
 		$("button#Run").click(function(){
 			$("button#Run").attr("disabled",true);
 			$("button#Run").text("运行中……");

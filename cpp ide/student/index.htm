@@ -62,14 +62,48 @@
 		      <div class="input-group-prepend">
 		        <span class="input-group-text">文件名：</span>
 		      </div>
-		      <input type="text" class="form-control" placeholder="程序1" id="file" value="abc">
+		      <input type="text" class="form-control" placeholder="程序1" id="file" value="abc.cpp">
+		      
 		    </div>
 	  <textarea rows="20" cols="50" id="cpp-code"></textarea><br>
 	  	<button type="button" class="btn btn-primary" id="Run" value="保存并运行">保存并运行</button>
+	  	<button class="btn btn-primary" data-toggle="modal" data-target="#myModal">
+	  		打开已保存程序
+	  	</button>
 	  	<pre class="CompileOk" id ="CompileOk"></pre>
 	  	<pre class="CompileErr" id ="CompileErr"></pre>
 	  	<pre class="RunOk" id ="RunOk"></pre>
 	  	<pre class="RunErr" id ="RunErr"></pre>
+	</div>
+
+
+
+	<div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+		<div class="modal-dialog">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h4 class="modal-title" id="myModalLabel">
+						我的程序
+					</h4>
+					<button type="button" class="close" data-dismiss="modal" 
+							aria-hidden="true">×
+					</button>
+					
+				</div>
+				<div class="modal-body">
+					<div class="list-group" id="fileList">
+
+						<!--
+					    <a href="javascript:$('#myModal').modal('hide')" class="list-group-item list-group-item-action">First item</a>
+					    <a href="#" class="list-group-item list-group-item-action">Second item</a>
+					    <a href="#" class="list-group-item list-group-item-action">Third item</a>
+					-->
+					 </div>
+					
+				</div>
+				
+			</div><!-- /.modal-content -->
+		</div><!-- /.modal-dialog -->
 	</div>
 	
 	

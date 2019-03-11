@@ -6,6 +6,8 @@ const CONTENT_REPLACEMENT = '^';
 const CURSOR_MOVE = '>';
 const STUDENT_UNSELECTION = '@';
 
+var openFile = null;
+
 $(document).ready(
 	function(){
 		$("button#Login").attr("disabled",true);//only allow login after websocket is connected
@@ -57,7 +59,7 @@ $(document).ready(
 			               //alert("您的浏览器支持 WebSocket!");
 			               
 			               // 打开一个 web socket
-			               var ws = new WebSocket("ws://qianlima.love:8889");
+			               var ws = new WebSocket("ws://localhost:8889");
 			                
 			               ws.onopen = function()
 			               {
@@ -184,6 +186,77 @@ $(document).ready(
             
         });
 
+        openFile = function openFile(file){
+			$('#myModal').modal('hide');
+			$("#file").val(file)
+			var file = {
+				'author':$("#student_id").val(),
+				'file':file
+			};
+			$.ajax({
+				type:"POST",
+				url: "http://qianlima.love:8888/readFile",
+				data: JSON.stringify(file),
+				contentType:"application/json; charset=utf-8",
+				
+				dataType:"json",
+				success: function(data){
+					//alert('ok');
+					console.log(data);
+					stopWatch = true					
+					cppEditor.setValue(data.content)
+					stopWatch = false		
+
+					
+					
+				},
+				failure: function(err){
+					alert(err);
+					
+				}
+			});
+	
+		};
+
+
+
+        $('#myModal').on('show.bs.modal', function () {//to update the stored files lits
+        			$("#fileList").empty();//empty all children
+          			$.ajax({
+          				type:"POST",
+          				url: "http://qianlima.love:8888/getFiles",
+          				data: JSON.stringify({'author':$("#student_id").val()}),
+          				contentType:"application/json; charset=utf-8",
+          				
+          				dataType:"json",
+          				success: function(data){
+          					//alert('ok');
+          					console.log(data);
+          					if(data.files.length>0){
+          						for (var i = 0; i < data.files.length; i++) {
+          							var file = data.files[i];
+          							var element = "<a href=\"javascript:openFile('"+file+"')\" class=\"list-group-item list-group-item-action\">"+file+"</a>";
+          							console.log(element);
+          							$("#fileList").append(element);
+
+          						}
+          					}else{
+          						$("#fileList").append('<span>没有已保存的程序</span>');
+          						
+          					}
+
+          					
+
+          					
+          					
+          				},
+          				failure: function(err){
+          					alert(err);
+          					
+          				}
+          			});
+        });
+
 
 
 		$("button#Login").click(function(){
@@ -237,7 +310,7 @@ $(document).ready(
 
 		function getSrcJsonStr(){
 			var src ={
-				'student_id':$("#student_id").val(),
+				'author':$("#student_id").val(),
 				'file':$("#file").val(),
 				'status':'sharing',
 				'content':cppEditor.getValue()

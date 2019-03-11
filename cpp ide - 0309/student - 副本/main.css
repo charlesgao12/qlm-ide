@@ -1,0 +1,16 @@
+.CompileOk{
+	color: green;
+	visibility: visible;
+}
+.CompileErr{
+	color: red;
+	visibility: visible;
+}
+.RunOk{
+	color: green;
+	visibility: visible;
+}
+.RunErr{
+	color: red;
+	visibility: visible;
+}
