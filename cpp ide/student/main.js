@@ -5,6 +5,7 @@ const STUDENT_SELECTION = '!';
 const CONTENT_REPLACEMENT = '^';
 const CURSOR_MOVE = '>';
 const STUDENT_UNSELECTION = '@';
+const ALREADY_LOG = 1;
 
 var openFile = null;
 
@@ -28,11 +29,17 @@ $(document).ready(
 		function loginResult(data){
 
 			if(data.result){
-				changeToNoticeMsg("Hello "+ data.student.student_id);
+				changeToNoticeMsg("Hello "+ data.student.people_id);
 				
 			}else{
-				console.log(data.result);
-				changeToErrorMsg("登录失败，请重试");
+				if(data.errorCode == ALREADY_LOG){
+					changeToErrorMsg("这个帐号已经登录，请先关闭已登录窗口再重试");
+				}else{
+					changeToErrorMsg("登录失败，请重试");
+
+				}
+				//console.log(data.result);
+				
 				
 			}
 			$("button#Login").attr("disabled",false);
@@ -59,7 +66,7 @@ $(document).ready(
 			               //alert("您的浏览器支持 WebSocket!");
 			               
 			               // 打开一个 web socket
-			               var ws = new WebSocket("ws://localhost:8889");
+			               var ws = new WebSocket("ws://qianlima.love:8889");
 			                
 			               ws.onopen = function()
 			               {
@@ -190,7 +197,7 @@ $(document).ready(
 			$('#myModal').modal('hide');
 			$("#file").val(file)
 			var file = {
-				'author':$("#student_id").val(),
+				'people_id':$("#people_id").val(),
 				'file':file
 			};
 			$.ajax({
@@ -203,9 +210,9 @@ $(document).ready(
 				success: function(data){
 					//alert('ok');
 					console.log(data);
-					stopWatch = true					
+					//stopWatch = true					
 					cppEditor.setValue(data.content)
-					stopWatch = false		
+					//stopWatch = false		
 
 					
 					
@@ -225,7 +232,7 @@ $(document).ready(
           			$.ajax({
           				type:"POST",
           				url: "http://qianlima.love:8888/getFiles",
-          				data: JSON.stringify({'author':$("#student_id").val()}),
+          				data: JSON.stringify({'people_id':$("#people_id").val()}),
           				contentType:"application/json; charset=utf-8",
           				
           				dataType:"json",
@@ -263,7 +270,7 @@ $(document).ready(
 			$("button#Login").attr("disabled",true);
 			$("button#Login").text("登录中……");
 			var student_login ={
-				'student_id':$("#student_id").val(),
+				'people_id':$("#people_id").val(),
 				'class_id':$("#class_id").val(),
 				'file':$("#file").val()
 			};
@@ -283,7 +290,7 @@ $(document).ready(
 			// 		//alert('ok');
 			// 		console.log(data);
 			// 		if(data.result){
-			// 			changeToNoticeMsg("Hello "+ student_login.student_id);
+			// 			changeToNoticeMsg("Hello "+ student_login.people_id);
 						
 			// 		}else{
 			// 			console.log(data.result);
@@ -310,7 +317,7 @@ $(document).ready(
 
 		function getSrcJsonStr(){
 			var src ={
-				'author':$("#student_id").val(),
+				'people_id':$("#people_id").val(),
 				'file':$("#file").val(),
 				'status':'sharing',
 				'content':cppEditor.getValue()
@@ -325,7 +332,7 @@ $(document).ready(
 
 
 			// var srcCode = {
-			// 	"student_id":"charles",
+			// 	"people_id":"charles",
 			// 	"fileName":"abc.cpp",
 			// 	"content":cppEditor.getValue()
 			// };

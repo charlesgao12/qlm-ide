@@ -3,6 +3,7 @@ const STUDENT_SELECTION = '!';
 const CONTENT_REPLACEMENT = '^';
 const CURSOR_MOVE = '>';
 const STUDENT_UNSELECTION = '@';
+const ALREADY_LOG = 1;
 
 var _class = require('./class.js');
 
@@ -13,7 +14,21 @@ console.log("start ws")
 var student_conn = new Map();
 var teacher_conn = null;
 var sharing_student = null;
+var teacher_id = null;
+
+function sendToTeacherClient(str){
+  if(teacher_conn !=null){
+    console.log('sendToTeacherClient',str)
+    teacher_conn.sendText(str);
+  }
+  else{
+    console.log('teacher conn is null')
+  }
+}
+
 var ws_student = ws.createServer(function(conn){
+
+  var conn_id = null;//this store the people_id of the connection
     
     conn.on("text", function (str) {//recevied msg from student client
         console.log("stu rcv:"+str);
@@ -24,20 +39,29 @@ var ws_student = ws.createServer(function(conn){
            var student_login = JSON.parse(jsonstr);
 
           //console.log(req.body);
-          var login_res = {'result':false, 'student':null};
+          var login_res = {'result':false, 'student':null,'errorCode':0};
 
-          if(student_login.class_id === _class.class.class_id){//class id ok
-            var students = _class.class.students;
-            for (var i = 0; i < students.length; i++) {
-                var stu = _class.class.students[i];
-                  if(stu.student_id === student_login.student_id){//the student is in the list
-                    login_res.result = true;
-                    login_res.student = _class.class.students[i];                   
+          if(student_conn.has(student_login.people_id)){//already log on
+            login_res.errorCode=1;            
 
-                    student_conn.set(student_login.student_id, conn);//update conn map
-                    break;
-                  }
-            }
+          }else{
+
+            if(student_login.class_id === _class.class.class_id){//class id ok
+              var students = _class.class.students;
+              for (var i = 0; i < students.length; i++) {
+                  var stu = _class.class.students[i];
+                    if(stu.people_id === student_login.people_id){//the student is in the list
+                      login_res.result = true;
+                      login_res.student = _class.class.students[i];      
+                      conn_id = student_login.people_id;             
+
+                      student_conn.set(student_login.people_id, conn);//update conn map
+                      break;
+                    }
+              }
+          }
+
+          
             
 
           }
@@ -47,21 +71,39 @@ var ws_student = ws.createServer(function(conn){
 
         }
         else if (type =='!'){//student return the real time content
-            teacher_conn.sendText(str);//just send out student's reply
+            sendToTeacherClient(str);//just send out student's reply
 
         }
 
         else{
             //TODO, shold check when to send the content update to teacher
-            teacher_conn.sendText(str);//send the student's msg to teacher
+            sendToTeacherClient(str);//send the student's msg to teacher
         }
 
 
         //conn.sendText(str+" ok")
        
     })
-    conn.on("close", function (code, reason) {
-        console.log("ws closed",code,reason)
+    conn.on("close", function (code, reason) {//if this student is being shared, must notify teacher that it is offline
+        console.log("ws closed",sharing_student,conn_id,code,reason);
+
+        if(conn_id !=null && sharing_student == conn_id){
+
+          var student ={
+              'people_id':conn_id,
+              'status':'offline',
+              'file':'',
+              'content':''
+          }
+
+          sendToTeacherClient('!'+JSON.stringify(student))
+          sharing_student = null;
+          student_conn.delete(conn_id)
+        }
+
+        
+
+
     });
     conn.on("error", function (code, reason) {
         console.log("ws error",code, reason)
@@ -71,7 +113,7 @@ var ws_student = ws.createServer(function(conn){
 console.log("student websocket ok");
 
 var ws_teacher = ws.createServer(function(conn){
-    teacher_conn = conn;
+    
     conn.on("text", function (str) {
         console.log("tch rcv:"+str);
 
@@ -80,24 +122,24 @@ var ws_teacher = ws.createServer(function(conn){
 
         if(type == '!'){//select student tab, check status and then get content if online
             const jsonstr = str.substring(1);
-            student_id = JSON.parse(jsonstr).student_id;
+            people_id = JSON.parse(jsonstr).people_id;
 
-            if(student_id == null){//this is teach tab selected, just need to update the sharing_student
+            if(people_id == null){//this is teach tab selected, just need to update the sharing_student
 
             }else{
-              var stu_conn = student_conn.get(student_id);
+              var stu_conn = student_conn.get(people_id);
               var student ={
-                  'student_id':student_id,
+                  'people_id':people_id,
                   'status':'offline',
                   'file':'',
                   'content':''
               }
-              console.log('update student:',sharing_student,student_id)
+              console.log('update student:',sharing_student,people_id)
               if(stu_conn == undefined){//student not connected
                   conn.sendText('!'+JSON.stringify(student));
               }else{//created connection before
                   
-                  if(sharing_student != student_id){//if same student selected, nth to do
+                  if(sharing_student != people_id){//if same student selected, nth to do
 
                       var old_conn = student_conn.get(sharing_student); 
 
@@ -112,7 +154,7 @@ var ws_teacher = ws.createServer(function(conn){
 
             
 
-            sharing_student = student_id;// need to update sharing in all cases (even the selected student is not online)
+            sharing_student = people_id;// need to update sharing in all cases (even the selected student is not online)
 
             
 
@@ -122,14 +164,23 @@ var ws_teacher = ws.createServer(function(conn){
            var teacher_login = JSON.parse(jsonstr);
 
           //console.log(req.body);
-          var login_res = {'result':false, 'class':null};
+          var login_res = {'result':false, 'class':null,'errorCode':0};
 
-          if(teacher_login.class_id === _class.class.class_id && _class.class.teacher_id === teacher_login.teacher_id){
-            login_res.result=true;
-            login_res.class=_class.class;
-          } 
+          if(teacher_id!=null && teacher_login.teacher_id == teacher_id){//this teacher already login
+            login_res.errorCode=ALREADY_LOG;
 
-          teacher_conn.sendText('~'+JSON.stringify(login_res));
+          }else{
+            if(teacher_login.class_id === _class.class.class_id && _class.class.teacher_id === teacher_login.teacher_id){
+              teacher_conn = conn;//only set this when teacher is logon
+              login_res.result=true;
+              login_res.class=_class.class;
+              teacher_id = teacher_login.teacher_id;
+            } 
+          }
+
+          
+
+          conn.sendText('~'+JSON.stringify(login_res));
           sharing_student = null;//reset sharing_student if teacher connection was reset
 
           //res.json(login_res);
@@ -146,6 +197,9 @@ var ws_teacher = ws.createServer(function(conn){
     })
     conn.on("close", function (code, reason) {
         console.log("tch ws closed",code,reason)
+        //reset some global vars
+        teacher_conn = null;
+        teacher_id = null;
     });
 
 
@@ -179,7 +233,7 @@ console.log("teacher websocket ok");
 //   if(req.body.class_id === _class.class.class_id){
 //     for (var i = 0; i < _class.class.students.length; i++) {
 //       var stu = _class.class.students[i];
-//       if(stu.student_id === req.body.student_id){
+//       if(stu.people_id === req.body.people_id){
 //         login_res.result = true;
 //         login_res.student = _class.class.students[i];
 //         break;

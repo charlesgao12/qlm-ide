@@ -56,7 +56,7 @@ var urlencodedParser = bodyParser.urlencoded({extended:false});
 app.post('/', jsonParser, function (req, res) {
 
   function writeSrcFile(){
-    fs.writeFile(req.body.author+'/'+req.body.file, req.body.content,function(err){
+    fs.writeFile(req.body.people_id+'/'+req.body.file, req.body.content,function(err){
        if(err) {
           console.log('fs failure');
           //must handle error response here
@@ -64,7 +64,7 @@ app.post('/', jsonParser, function (req, res) {
        }
        else {
           console.log('fs success');
-          cp.compile(req.body.author+'/'+req.body.file,req.body.author+'-'+req.body.file+'.out',res);
+          cp.compile(req.body.people_id+'/'+req.body.file,req.body.people_id+'-'+req.body.file+'.out',res);
        }
     });
   }
@@ -72,11 +72,11 @@ app.post('/', jsonParser, function (req, res) {
 
   // create user in req.body
   console.log(req.body);
-  fs.access(req.body.author,fs.constants.F_OK|fs.constants.W_OK, (err)=>{
+  fs.access(req.body.people_id,fs.constants.F_OK|fs.constants.W_OK, (err)=>{
     if (err){
       if(err.code === 'ENOENT'){
-        console.log(req.body.author+' not exist, create it');
-        fs.mkdir(req.body.author, { recursive: true }, (err) => {
+        console.log(req.body.people_id+' not exist, create it');
+        fs.mkdir(req.body.people_id, { recursive: true }, (err) => {
           if (err) {res.json({'compileCode':-1,'compileErr':'fs failure'+err});}
           else{
             //created
@@ -89,7 +89,7 @@ app.post('/', jsonParser, function (req, res) {
       }
       
       //console.log(
-      //"${req.body.author} ${err.code === 'ENOENT' ? 'does not exist' : 'is read-only'}");
+      //"${req.body.people_id} ${err.code === 'ENOENT' ? 'does not exist' : 'is read-only'}");
 
     }else{
       console.log('folder exists, and it is writable');
@@ -111,10 +111,11 @@ app.post('/getFiles', jsonParser, function (req, res) {
 
   console.log(req.body);
 
-  var author =req.body.author;
+  var people_id =req.body.people_id;
+  console.log(people_id)
 
-  fs.readdir(author,function(err, files){
-    console.log(author, files);
+  fs.readdir(people_id,function(err, files){
+    console.log(people_id, files);
     req.body.files = files;
     res.json(req.body);
   })
@@ -129,7 +130,7 @@ app.post('/readFile', jsonParser, function (req, res) {
 
   console.log(req.body);
 
-  var file =req.body.author+"/"+req.body.file;
+  var file =req.body.people_id+"/"+req.body.file;
 
   fs.readFile(file,function(err, data){
     //console.log(file, files);

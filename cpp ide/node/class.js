@@ -5,17 +5,17 @@ module.exports={
 //compile('abc.cpp');
 
 class: {
-	'teacher_id' : 'Charles',
+	'teacher_id' : 'Teacher01',
 	'students':[
 		{
-			'student_id':'Amy',
+			'people_id':'Amy',
 			'status':'offline',
 			'file':'',
 			'content':''
 
 		},
 		{
-			'student_id':'John',
+			'people_id':'John',
 			'status':'offline',
 			'file':'',
 			'content':''

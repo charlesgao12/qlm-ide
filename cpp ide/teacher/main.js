@@ -1,3 +1,10 @@
+const LOGIN = '~';
+const STUDENT_SELECTION = '!';
+const CONTENT_REPLACEMENT = '^';
+const CURSOR_MOVE = '>';
+const STUDENT_UNSELECTION = '@';
+const ALREADY_LOG = 1;
+
 var ws = null;
 
 var displaying = null;//null means the teacher has not login, once login, will be changed ot Teacher_tab
@@ -42,11 +49,17 @@ $(document).ready(
 					//if(students[i].status=='offline'){
 					//	disabled = 'disabled';
 					//}
-					var element = '<li class="nav-item"><a class="nav-link" id="'+students[i].student_id+'" href="javascript:display(\''+students[i].student_id+'\')">'+students[i].student_id+ '</a></li>';
+					var element = '<li class="nav-item"><a class="nav-link" id="'+students[i].people_id+'" href="javascript:display(\''+students[i].people_id+'\')">'+students[i].people_id+ '</a></li>';
 					$("#Tabs").append(element);
 				}
 			}else{
-				changeToErrorMsg("登录失败，请重试");
+				if(data.errorCode == ALREADY_LOG){
+					changeToErrorMsg("这个帐号已经登录，请先关闭已登录窗口再重试");
+				}else{
+					changeToErrorMsg("登录失败，请重试");
+
+				}
+				//changeToErrorMsg("登录失败，请重试");
 				
 			}
 			$("button#Login").attr("disabled",false);
@@ -85,10 +98,10 @@ $(document).ready(
 				//$("#teacher_id").val();
 				updateContent(teacher);
 				//still need to send msg to ws server to notify changing of the tab
-				ws.send("!"+JSON.stringify({'student_id':null}));
+				ws.send("!"+JSON.stringify({'people_id':null}));
 
 			}else{	
-					ws.send("!"+JSON.stringify({'student_id':tab_id}));
+					ws.send("!"+JSON.stringify({'people_id':tab_id}));
 				//	displaying = tab_id;
 
 
@@ -104,12 +117,12 @@ $(document).ready(
 				changeToNoticeMsg("Hello "+ $("#teacher_id").val());
 			}else if(content_obj.status == 'sharing'){
 				sharing = true;
-				changeToNoticeMsg("现在控制的是"+content_obj.student_id+"的程序")
+				changeToNoticeMsg("现在控制的是"+content_obj.people_id+"的程序")
 			}else{			
-				changeToErrorMsg(content_obj.student_id+"还没有进入课室")
+				changeToErrorMsg(content_obj.people_id+"还没有进入课室")
 			}
 			stopWatch = true;
-			//if(content_obj.student_id == )
+			//if(content_obj.people_id == )
 			cppEditor.setValue(content_obj.content);
 			$("#file").val(content_obj.file);
 			stopWatch = false;
@@ -123,7 +136,7 @@ $(document).ready(
 			               //alert("您的浏览器支持 WebSocket!");
 			               
 			               // 打开一个 web socket
-			               var ws = new WebSocket("ws://localhost:8890");
+			               var ws = new WebSocket("ws://qianlima.love:8890");
 			                
 			               ws.onopen = function()
 			               {
@@ -283,7 +296,7 @@ $(document).ready(
 			// 				if(students[i].status=='offline'){
 			// 					disabled = 'disabled';
 			// 				}
-			// 				var element = '<li class="nav-item"><a class="nav-link '+disabled+'" id="'+students[i].student_id+'" href="javascript:display(\''+students[i].student_id+'\')">'+students[i].student_id+ '</a></li>';
+			// 				var element = '<li class="nav-item"><a class="nav-link '+disabled+'" id="'+students[i].people_id+'" href="javascript:display(\''+students[i].people_id+'\')">'+students[i].people_id+ '</a></li>';
 			// 				$("#Tabs").append(element);
 			// 			}
 			// 		}else{
@@ -310,16 +323,16 @@ $(document).ready(
 
 		});
 
-		//return the author's id
+		//return the people_id's id
 		//if it's teacher, should return teacher's id not teacher tab
 		function getAuthor(){
 
-			var author = displaying;
+			var people_id = displaying;
 
 			if(displaying == 'Teacher_tab'){
-				author =  $("#teacher_id").val();
+				people_id =  $("#teacher_id").val();
 			}
-			return author;
+			return people_id;
 
 
 
@@ -327,7 +340,7 @@ $(document).ready(
 
 		function getSrcJsonStr(){
 			var src ={
-				'author':getAuthor(),
+				'people_id':getAuthor(),
 				'file':$("#file").val(),
 				'status':'sharing',
 				'content':cppEditor.getValue()
@@ -344,7 +357,7 @@ $(document).ready(
 
 
 			// var srcCode = {
-			// 	"student_id":"charles",
+			// 	"people_id":"charles",
 			// 	"fileName":"abc.cpp",
 			// 	"content":cppEditor.getValue()
 			// };
