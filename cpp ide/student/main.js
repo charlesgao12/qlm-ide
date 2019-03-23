@@ -1,11 +1,16 @@
 var ws = null;
 
 const LOGIN = '~';
+const LOGOUT = '`';
 const STUDENT_SELECTION = '!';
 const CONTENT_REPLACEMENT = '^';
+const FILE_REPLACEMENT = '-';
 const CURSOR_MOVE = '>';
 const STUDENT_UNSELECTION = '@';
 const ALREADY_LOG = 1;
+
+const LOGIN_TEXT = '登录'
+const LOGOUT_TEXT = '登出'
 
 var openFile = null;
 
@@ -26,10 +31,28 @@ $(document).ready(
 			$("#Message").html(msg);
 		}
 
+		function changeButToLogout(){
+			$("button#Login").removeClass("btn btn-success");
+			$("button#Login").addClass("btn btn-warning");
+			$("button#Login").text(LOGOUT_TEXT);
+
+		}
+		function changeButToLogin(){
+			$("button#Login").removeClass("btn btn-warning");
+			$("button#Login").addClass("btn btn-success");
+			$("button#Login").text(LOGIN_TEXT);
+		}
+
 		function loginResult(data){
 
 			if(data.result){
 				changeToNoticeMsg("Hello "+ data.student.people_id);
+				//$("button#Logout").attr("disabled",false);
+				//console.log('what?')
+				//$("button#Login").text(LOGOUT_TEXT);
+				changeButToLogout();
+
+
 				
 			}else{
 				if(data.errorCode == ALREADY_LOG){
@@ -39,11 +62,12 @@ $(document).ready(
 
 				}
 				//console.log(data.result);
+				$("button#Login").text(LOGIN_TEXT);
 				
 				
 			}
 			$("button#Login").attr("disabled",false);
-			$("button#Login").html($("button#Login").val());
+			//
 
 		}
 		
@@ -264,19 +288,43 @@ $(document).ready(
           			});
         });
 
+        // $("button#Logout").click(function(){
+        // 	$("button#Logout").attr("disabled",true);
+        	
+
+        // 	ws.send(LOGOUT+JSON.stringify({'people_id':$("#people_id").val()}));
+
+
+        // });
+
 
 
 		$("button#Login").click(function(){
-			$("button#Login").attr("disabled",true);
-			$("button#Login").text("登录中……");
-			var student_login ={
-				'people_id':$("#people_id").val(),
-				'class_id':$("#class_id").val(),
-				'file':$("#file").val()
-			};
-			console.log(student_login);
+			
+			if($("button#Login").text() == LOGIN_TEXT){
+				$("button#Login").attr("disabled",true);
+				$("button#Login").text("登录中……");
+				var student_login ={
+					'people_id':$("#people_id").val(),
+					'class_id':$("#class_id").val(),
+					'file':$("#file").val()
+				};
+				console.log(student_login);
 
-			ws.send('~'+JSON.stringify(student_login));
+				ws.send('~'+JSON.stringify(student_login));
+
+			}
+			else if ($("button#Login").text() == LOGOUT_TEXT){//if it's now logout status, then notify logout, and change to be login status
+				ws.send(LOGOUT+JSON.stringify({'people_id':$("#people_id").val()}));
+				//$("button#Login").text(LOGIN_TEXT);
+				changeButToLogin();
+
+			}
+
+
+			
+
+			
 
 
 			// $.ajax({
@@ -313,6 +361,13 @@ $(document).ready(
 			// 		$("button#Login").html($("button#Login").val());
 			// 	}
 			// });
+		});
+
+		$("#file").on("input propertychange", function () {//the file field changed
+    		//console.log('f',$("#file").val())
+    		if (sharing && !stopWatch) {
+    			ws.send(FILE_REPLACEMENT+$("#file").val());
+    		}
 		});
 
 		function getSrcJsonStr(){

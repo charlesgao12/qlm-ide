@@ -1,6 +1,8 @@
 const LOGIN = '~';
+const LOGOUT = '`';
 const STUDENT_SELECTION = '!';
 const CONTENT_REPLACEMENT = '^';
+const FILE_REPLACEMENT = '-';
 const CURSOR_MOVE = '>';
 const STUDENT_UNSELECTION = '@';
 const ALREADY_LOG = 1;
@@ -29,6 +31,26 @@ function sendToTeacherClient(str){
 var ws_student = ws.createServer(function(conn){
 
   var conn_id = null;//this store the people_id of the connection
+
+  function logout(){
+    if(conn_id !=null ){
+
+      if(sharing_student == conn_id){//this student is being shared, need to notify teacher
+        var student ={
+            'people_id':conn_id,
+            'status':'offline',
+            'file':'',
+            'content':''
+        }
+
+        sendToTeacherClient('!'+JSON.stringify(student))
+        sharing_student = null;
+
+      }    
+      
+      student_conn.delete(conn_id)
+    }
+  }
     
     conn.on("text", function (str) {//recevied msg from student client
         console.log("stu rcv:"+str);
@@ -70,6 +92,10 @@ var ws_student = ws.createServer(function(conn){
           //res.json(login_res);
 
         }
+        else if(type == LOGOUT){
+          logout();
+
+        }
         else if (type =='!'){//student return the real time content
             sendToTeacherClient(str);//just send out student's reply
 
@@ -83,25 +109,11 @@ var ws_student = ws.createServer(function(conn){
 
         //conn.sendText(str+" ok")
        
-    })
+    });
+
     conn.on("close", function (code, reason) {//if this student is being shared, must notify teacher that it is offline
         console.log("ws closed",sharing_student,conn_id,code,reason);
-
-        if(conn_id !=null && sharing_student == conn_id){
-
-          var student ={
-              'people_id':conn_id,
-              'status':'offline',
-              'file':'',
-              'content':''
-          }
-
-          sendToTeacherClient('!'+JSON.stringify(student))
-          sharing_student = null;
-          student_conn.delete(conn_id)
-        }
-
-        
+        logout();       
 
 
     });
@@ -113,6 +125,13 @@ var ws_student = ws.createServer(function(conn){
 console.log("student websocket ok");
 
 var ws_teacher = ws.createServer(function(conn){
+
+  function logout(){
+    //reset some global vars
+    teacher_conn = null;
+    teacher_id = null;
+
+  }
     
     conn.on("text", function (str) {
         console.log("tch rcv:"+str);
@@ -159,7 +178,13 @@ var ws_teacher = ws.createServer(function(conn){
             
 
 
-        }else if (type == '~'){//teacher login
+        }
+        else if(type == LOGOUT){
+          logout();
+
+        }
+
+        else if (type == '~'){//teacher login
              const jsonstr = str.substring(1);
            var teacher_login = JSON.parse(jsonstr);
 
@@ -197,9 +222,7 @@ var ws_teacher = ws.createServer(function(conn){
     })
     conn.on("close", function (code, reason) {
         console.log("tch ws closed",code,reason)
-        //reset some global vars
-        teacher_conn = null;
-        teacher_id = null;
+        logout();
     });
 
 

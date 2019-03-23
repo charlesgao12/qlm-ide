@@ -1,9 +1,13 @@
 const LOGIN = '~';
+const LOGOUT = '`';
 const STUDENT_SELECTION = '!';
 const CONTENT_REPLACEMENT = '^';
+const FILE_REPLACEMENT = '-';
 const CURSOR_MOVE = '>';
 const STUDENT_UNSELECTION = '@';
 const ALREADY_LOG = 1;
+const LOGIN_TEXT = '登录'
+const LOGOUT_TEXT = '登出'
 
 var ws = null;
 
@@ -38,11 +42,23 @@ $(document).ready(
 			$("#Message").html(msg);
 		}
 
+		function changeButToLogout(){
+			$("button#Login").removeClass("btn btn-success");
+			$("button#Login").addClass("btn btn-warning");
+			$("button#Login").text(LOGOUT_TEXT);
+
+		}
+		function changeButToLogin(){
+			$("button#Login").removeClass("btn btn-warning");
+			$("button#Login").addClass("btn btn-success");
+			$("button#Login").text(LOGIN_TEXT);
+		}
 		function loginResult(data){
 
 			if(data.result){
 				displaying = "Teacher_tab";
 				changeToNoticeMsg("Hello "+ data.class.teacher_id);
+				changeButToLogout();
 				var students = data.class.students;
 				for (var i = 0; i < students.length; i++) {
 					var disabled = '';
@@ -60,10 +76,11 @@ $(document).ready(
 
 				}
 				//changeToErrorMsg("登录失败，请重试");
+				$("button#Login").text(LOGIN_TEXT);
 				
 			}
 			$("button#Login").attr("disabled",false);
-			$("button#Login").html($("button#Login").val());
+			//$("button#Login").html($("button#Login").val());
 
 		}
 		
@@ -197,7 +214,15 @@ $(document).ready(
 			                  	cppEditor.replaceRange(replacement, stPos, edPos)
 			                  	stopWatch = false	
 
-			                  }else if(type =='>'){//cursor moved
+			                  }
+
+			                  else if (type == FILE_REPLACEMENT){
+			                  	stopWatch = true
+			                  	$("#file").val(data.substring(1));
+			                  	stopWatch = false
+			                  }
+
+			                  else if(type =='>'){//cursor moved
 
 			                  }else if(type =='~'){//handle login result
 			                  	loginResult(JSON.parse(data.substring(1)));
@@ -266,16 +291,30 @@ $(document).ready(
 
 
 		$("button#Login").click(function(){
-			$("button#Login").attr("disabled",true);
-			$("button#Login").text("登录中……");
-			var teacher_login ={
-				'teacher_id':$("#teacher_id").val(),
-				'class_id':$("#class_id").val()
-				//'file':$("#file").val()
-			};
-			console.log(teacher_login);
+			if($("button#Login").text() == LOGIN_TEXT){
+				$("button#Login").attr("disabled",true);
+				$("button#Login").text("登录中……");
+				var teacher_login ={
+					'teacher_id':$("#teacher_id").val(),
+					'class_id':$("#class_id").val()
+					//'file':$("#file").val()
+				};
+				console.log(teacher_login);
 
-			ws.send('~'+JSON.stringify(teacher_login));
+				ws.send('~'+JSON.stringify(teacher_login));
+
+			}
+
+			else if ($("button#Login").text() == LOGOUT_TEXT){
+				ws.send(LOGOUT+JSON.stringify({'people_id':$("#teacher_id").val()}));
+				//$("button#Login").text(LOGIN_TEXT);
+				changeButToLogin();
+
+			}
+
+
+
+			
 
 
 			// $.ajax({
